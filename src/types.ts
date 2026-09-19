@@ -28,6 +28,10 @@ export interface KanbanTask {
   tags?: string[];
   fileName?: string;
   completed?: boolean;
+  rating?: number;
+  imageUrl?: string;
+  status?: string;
+  notes?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -49,6 +53,8 @@ export interface Note {
   updatedAt: number;
   wordCount: number;
   readingTime: number;
+  starred?: boolean;
+  pinned?: boolean;
 }
 
 export type AIAction = 
@@ -58,7 +64,8 @@ export type AIAction =
   | 'rewrite' 
   | 'continue' 
   | 'grammar' 
-  | 'custom';
+  | 'custom'
+  | 'new_conversation';
 
 export interface AISettings {
   openRouterApiKey: string;

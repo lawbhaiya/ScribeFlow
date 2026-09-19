@@ -4,9 +4,11 @@ import {
   Search, 
   Trash2, 
   Copy, 
+  Pin,
   ChevronLeft, 
   ChevronRight, 
   ChevronDown,
+  Heart,
   FileText, 
   Kanban as KanbanIcon,
   FolderGit2
@@ -22,6 +24,7 @@ interface SidebarProps {
   onCreateRoom: () => void;
   onDeleteNote: (id: string) => void;
   onDuplicateNote: (note: Note) => void;
+  onTogglePin: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
@@ -35,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreateRoom,
   onDeleteNote,
   onDuplicateNote,
+  onTogglePin,
   isCollapsed,
   onToggleCollapse
 }) => {
@@ -60,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       (n.subtitle && n.subtitle.toLowerCase().includes(q)) ||
       (n.content && n.content.toLowerCase().includes(q))
     );
-  });
+  }).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
 
   const formatTime = (timestamp: number) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -154,6 +158,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
+        </div>
+        <div className="mt-auto pt-3 text-[9px] opacity-45" title="Made with love by Nilu @2026">
+          <Heart className="w-3 h-3 mx-auto text-rose-400" fill="currentColor" />
+          <span className="sr-only">Made with love by Nilu @2026</span>
         </div>
       </div>
     );
@@ -338,6 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="font-medium truncate font-editorial-sans text-xs">
                     {note.title.trim() || (isRoom ? 'Project Room Planner' : isKanban ? 'Task Planner' : 'Untitled note')}
                   </span>
+                  {note.pinned && <Pin className="w-3 h-3 shrink-0 text-cyan-500" fill="currentColor" />}
                 </div>
 
                 {/* Subtitle / context info */}
@@ -366,6 +375,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      onTogglePin(note.id);
+                    }}
+                    className={`p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors ${note.pinned ? 'text-cyan-500' : ''}`}
+                    title={note.pinned ? 'Unpin' : 'Pin'}
+                  >
+                    <Pin className="w-3 h-3" fill={note.pinned ? 'currentColor' : 'none'} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onDuplicateNote(note);
                     }}
                     className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
@@ -391,6 +410,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })
         )}
+      </div>
+      <div
+        className="shrink-0 border-t px-3 py-2 text-center text-[10px] opacity-50"
+        style={{ borderColor: 'var(--border-color)' }}
+      >
+        <span className="inline-flex items-center gap-1">
+          Made with <Heart className="w-3 h-3 text-rose-400" fill="currentColor" /> by Nilu @2026
+        </span>
       </div>
     </aside>
   );

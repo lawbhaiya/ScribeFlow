@@ -124,6 +124,17 @@
   font-family: var(--font-mono);
 }
 
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  outline: none;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
 /* Ensure placeholder text is crisp and legible across all themes */
 input::placeholder,
 textarea::placeholder {

@@ -16,9 +16,13 @@ import {
   Italic, 
   Link as LinkIcon, 
   Highlighter,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Trash2,
   Check, 
   Copy, 
-  Trash2, 
   Wand2,
   FileText,
   RefreshCw
@@ -37,6 +41,7 @@ import {
 interface EditorProps {
   note: Note;
   isSidebarCollapsed: boolean;
+  onDeleteNote?: (id: string) => void;
   onUpdateNote: (updated: Partial<Note>) => void;
   isRecording: boolean;
   onToggleRecord: () => void;
@@ -63,6 +68,7 @@ interface SlashCommand {
 export const Editor: React.FC<EditorProps> = ({
   note,
   isSidebarCollapsed,
+  onDeleteNote,
   onUpdateNote,
   isRecording,
   onToggleRecord,
@@ -93,6 +99,10 @@ export const Editor: React.FC<EditorProps> = ({
     text: string;
   } | null>(null);
   const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+  const [showAIMenu, setShowAIMenu] = useState(false);
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const [newConversationTopic, setNewConversationTopic] = useState('');
+  const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('scribeflow_editor_font') || 'Newsreader');
 
   // Modals & UI States
   const [showImageModal, setShowImageModal] = useState(false);
@@ -102,6 +112,7 @@ export const Editor: React.FC<EditorProps> = ({
 
   const [showCustomPromptModal, setShowCustomPromptModal] = useState(false);
   const [customPromptText, setCustomPromptText] = useState('');
+  const [customPromptAction, setCustomPromptAction] = useState<'custom' | 'rewrite' | 'continue'>('custom');
   const [copiedBlockId, setCopiedBlockId] = useState<string | null>(null);
 
   // Refs
@@ -649,7 +660,19 @@ export const Editor: React.FC<EditorProps> = ({
       item.id === blockId
         ? {
             ...item,
-            highlights: [...(item.highlights || []), { start, end, color }]
+            highlights: [
+              ...(item.highlights || []).flatMap((highlight) => {
+                const pieces = [];
+                if (highlight.start < start) {
+                  pieces.push({ ...highlight, end: start });
+                }
+                if (highlight.end > end) {
+                  pieces.push({ ...highlight, start: end });
+                }
+                return pieces;
+              }),
+              { start, end, color }
+            ]
           }
         : item
     ));
@@ -725,13 +748,115 @@ export const Editor: React.FC<EditorProps> = ({
   return (
     <main 
       id="main-editor-canvas"
-      className={`flex-1 overflow-y-auto flex flex-col px-6 sm:px-10 md:px-12 lg:px-16 py-10 relative transition-colors select-text ${isSidebarCollapsed ? 'items-center' : 'items-start'}`}
+      className={`flex-1 overflow-y-auto flex flex-col relative transition-colors select-text ${isSidebarCollapsed ? 'items-center' : 'items-start'}`}
       style={{
         backgroundColor: 'var(--bg-main)',
-        color: 'var(--text-primary)'
-      }}
+        color: 'var(--text-primary)',
+        fontFamily,
+        '--font-serif': `'${fontFamily}', serif`
+      } as React.CSSProperties}
     >
-      <div className="w-full max-w-5xl flex flex-col relative pb-20">
+      <header
+        className="w-full border-b px-4 sm:px-6 py-2 mb-8 flex items-center justify-between gap-3 shrink-0"
+        style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-main)' }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1 opacity-50">
+            <button className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer" title="Previous note">
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer" title="Next note">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <span className="text-xs opacity-60 truncate">Notes / {note.title || 'Untitled note'}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <select
+            value={fontFamily}
+            onChange={(e) => {
+              setFontFamily(e.target.value);
+              localStorage.setItem('scribeflow_editor_font', e.target.value);
+            }}
+            className="hidden sm:block px-2 py-1 rounded-lg border bg-transparent text-xs outline-none cursor-pointer"
+            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+            title="Editor font"
+          >
+            <option value="Newsreader">Newsreader</option>
+            <option value="Lora">Lora</option>
+            <option value="Plus Jakarta Sans">Jakarta Sans</option>
+          </select>
+          <div className="relative">
+            <button
+              onClick={() => setShowAIMenu((open) => !open)}
+              className="flex items-center gap-1 p-1.5 rounded-lg border hover:opacity-80 cursor-pointer"
+              style={{ borderColor: 'var(--border-color)' }}
+              title="AI writing tools"
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-color)' }} />
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+            {showAIMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border py-1.5 shadow-xl z-50 text-xs" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-semibold opacity-55">AI Writing Tools</div>
+                {([
+                  ['organize', 'Organize & Flow', 'Clean speech into polished paragraphs'],
+                  ['structure', 'Structure into Sections', 'Add headings, sections, and takeaways'],
+                  ['summarize', 'Summarise & Subtitle', 'Create a concise summary'],
+                  ['grammar', 'Polish Grammar & Syntax', 'Correct mechanics and preserve voice']
+                ] as const).map(([action, title, subtitle]) => (
+                  <button
+                    key={action}
+                    onClick={() => { onSelectAIAction(action); setShowAIMenu(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-black/10 dark:hover:bg-white/5 cursor-pointer"
+                  >
+                    <div className="font-medium">{title}</div>
+                    <div className="text-[11px] opacity-65">{subtitle}</div>
+                  </button>
+                ))}
+                <div className="my-1 border-t" style={{ borderColor: 'var(--border-color)' }} />
+                <button
+                  onClick={() => { setShowNewConversationModal(true); setShowAIMenu(false); }}
+                  className="w-full text-left px-3 py-2 hover:bg-black/10 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <div className="font-medium text-[var(--accent-color)]">New Conversation</div>
+                  <div className="text-[11px] opacity-65">Start a fresh piece from a topic</div>
+                </button>
+                <button
+                  onClick={() => { setCustomPromptAction('rewrite'); setCustomPromptText(''); setShowCustomPromptModal(true); setShowAIMenu(false); }}
+                  className="w-full text-left px-3 py-2 hover:bg-black/10 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <div className="font-medium">Rewrite Draft</div>
+                  <div className="text-[11px] opacity-65">Rewrite the existing note with direction</div>
+                </button>
+                <button
+                  onClick={() => { setCustomPromptAction('continue'); setCustomPromptText(''); setShowCustomPromptModal(true); setShowAIMenu(false); }}
+                  className="w-full text-left px-3 py-2 hover:bg-black/10 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <div className="font-medium">Continue Writing</div>
+                  <div className="text-[11px] opacity-65">Continue the existing thought with direction</div>
+                </button>
+                <button
+                  onClick={() => { setCustomPromptAction('custom'); setCustomPromptText(''); setShowCustomPromptModal(true); setShowAIMenu(false); }}
+                  className="w-full text-left px-3 py-2 hover:bg-black/10 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <div className="font-medium">Custom Rewrite</div>
+                  <div className="text-[11px] opacity-65">Give your own transformation instructions</div>
+                </button>
+              </div>
+            )}
+          </div>
+          <button onClick={onToggleRecord} className="p-1.5 rounded-lg border hover:opacity-80 cursor-pointer" style={{ borderColor: isRecording ? 'var(--mic-color)' : 'var(--border-color)', color: isRecording ? 'var(--mic-color)' : 'var(--text-primary)' }} title={isRecording ? 'Stop recording' : 'Record voice'}>
+            <Mic className="w-3.5 h-3.5" />
+          </button>
+          <span className="hidden md:inline text-[11px] opacity-60 px-1">{note.wordCount} words · {note.readingTime}m read</span>
+          <button onClick={() => onUpdateNote({ starred: !note.starred })} className={`p-1.5 rounded-lg border cursor-pointer ${note.starred ? 'text-amber-400' : 'opacity-60 hover:opacity-100'}`} style={{ borderColor: 'var(--border-color)' }} title={note.starred ? 'Unstar note' : 'Star note'}>
+            <Star className="w-3.5 h-3.5" fill={note.starred ? 'currentColor' : 'none'} />
+          </button>
+          {onDeleteNote && <button onClick={() => onDeleteNote(note.id)} className="p-1.5 rounded-lg border text-red-400 hover:bg-red-500/10 cursor-pointer" style={{ borderColor: 'var(--border-color)' }} title="Delete note"><Trash2 className="w-3.5 h-3.5" /></button>}
+        </div>
+      </header>
+      <div className="w-full max-w-5xl px-6 sm:px-10 md:px-12 lg:px-16 pt-2 pb-20 flex flex-col relative">
 
         {/* AI Result Review Banner (Clean, Minimalist Card) */}
         {aiResult && aiResult.content && (
@@ -1316,6 +1441,41 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
       )}
 
+      {showNewConversationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!newConversationTopic.trim()) return;
+              onSelectAIAction('new_conversation', newConversationTopic.trim());
+              setShowNewConversationModal(false);
+              setNewConversationTopic('');
+            }}
+            className="w-full max-w-md rounded-2xl border p-5 shadow-2xl space-y-4"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+          >
+            <div>
+              <h3 className="text-base font-semibold">New Conversation</h3>
+              <p className="text-xs opacity-70 mt-1">Give ScribeFlow a topic and it will write a fresh draft from scratch.</p>
+            </div>
+            <textarea
+              autoFocus
+              value={newConversationTopic}
+              onChange={(e) => setNewConversationTopic(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setShowNewConversationModal(false); }}
+              placeholder="What do you want to write about?"
+              rows={4}
+              className="w-full px-3 py-2.5 rounded-lg border text-sm bg-transparent outline-none resize-none"
+              style={{ borderColor: 'var(--border-color)' }}
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setShowNewConversationModal(false)} className="px-3 py-1.5 text-xs rounded-lg border opacity-80 hover:opacity-100 cursor-pointer" style={{ borderColor: 'var(--border-color)' }}>Cancel</button>
+              <button type="submit" disabled={!newConversationTopic.trim()} className="px-4 py-1.5 text-xs rounded-lg font-medium text-white bg-[var(--accent-color)] hover:opacity-90 disabled:opacity-40 cursor-pointer">Start Writing</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Custom AI Prompt Modal */}
       {showCustomPromptModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
@@ -1329,15 +1489,15 @@ export const Editor: React.FC<EditorProps> = ({
           >
             <h3 className="text-base font-semibold flex items-center gap-2">
               <Wand2 className="w-4 h-4 text-purple-500" />
-              <span>Custom AI Rewrite</span>
+              <span>{customPromptAction === 'rewrite' ? 'Rewrite Draft' : customPromptAction === 'continue' ? 'Continue Writing' : 'Custom AI Rewrite'}</span>
             </h3>
             <p className="text-xs opacity-70">
-              Give specific instructions (e.g. "Rewrite in an executive newsletter tone", "Turn into bulleted action items", "Make it poetic").
+              {customPromptAction === 'continue' ? 'Describe what the next part should develop.' : 'Give specific instructions for the transformation.'}
             </p>
             <textarea
               value={customPromptText}
               onChange={(e) => setCustomPromptText(e.target.value)}
-              placeholder="How would you like AI to transform this note?"
+              placeholder={customPromptAction === 'continue' ? 'Continue by developing the practical implications...' : 'How would you like AI to transform this note?'}
               rows={3}
               className="w-full px-3 py-2 rounded-lg border text-xs bg-transparent outline-none resize-none"
               style={{ borderColor: 'var(--border-color)' }}
@@ -1349,6 +1509,7 @@ export const Editor: React.FC<EditorProps> = ({
                 onClick={() => {
                   setShowCustomPromptModal(false);
                   setCustomPromptText('');
+                  setCustomPromptAction('custom');
                 }}
                 className="px-3 py-1.5 text-xs rounded-lg border opacity-80 hover:opacity-100 cursor-pointer"
                 style={{ borderColor: 'var(--border-color)' }}
@@ -1359,10 +1520,11 @@ export const Editor: React.FC<EditorProps> = ({
                 type="button"
                 onClick={() => {
                   if (customPromptText.trim()) {
-                    onSelectAIAction('custom', customPromptText.trim());
+                    onSelectAIAction(customPromptAction, customPromptText.trim());
                   }
                   setShowCustomPromptModal(false);
                   setCustomPromptText('');
+                  setCustomPromptAction('custom');
                 }}
                 className="px-4 py-1.5 text-xs rounded-lg font-medium text-white bg-[var(--accent-color)] hover:opacity-90 cursor-pointer"
               >

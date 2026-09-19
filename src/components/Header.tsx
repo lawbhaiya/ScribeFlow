@@ -120,6 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
     setCustomPrompt('');
   };
 
+
   const getThemeLabel = (t: Theme) => {
     switch (t) {
       case 'mocha': return '🐱 Mocha';
@@ -152,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Right Action Controls */}
       <div className="flex items-center gap-2.5">
         {/* Organize Button & Dropdown */}
-        <div className="relative" ref={organizeMenuRef}>
+        <div className="relative hidden" ref={organizeMenuRef}>
           <button
             id="btn-organize"
             onClick={() => setShowOrganizeMenu(!showOrganizeMenu)}
@@ -258,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Record Voice Button with Integrated Dropdown Inside */}
-        <div className="relative" ref={voiceMenuRef}>
+        <div className="relative hidden" ref={voiceMenuRef}>
           <button
             id="btn-record-voice"
             onClick={(e) => {
@@ -406,7 +407,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Word Count & Reading Time */}
-        <div className="text-xs px-2 opacity-70 whitespace-nowrap hidden sm:inline-block">
+        <div className="hidden text-xs px-2 opacity-70 whitespace-nowrap sm:inline-block">
           {wordCount} words · {readingTime}m read
         </div>
 

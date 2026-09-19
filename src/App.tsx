@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
 import { KanbanBoard, DEFAULT_KANBAN_DATA } from './components/KanbanBoard';
-import { RoomPlanner, DEFAULT_ROOM_DATA } from './components/RoomPlanner';
+import { Rooms, DEFAULT_ROOM_DATA, PROJECT_TEMPLATES, TemplateDialog } from './components/planner';
 import { SettingsModal } from './components/SettingsModal';
 import { Note, Theme, VoiceMode, AIAction, AISettings, AIThoughtResult } from './types';
 import { DEFAULT_AI_SETTINGS, processTextWithAI } from './services/aiService';
@@ -112,6 +112,7 @@ export default function App() {
   // UI state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isRoomTemplateDialogOpen, setIsRoomTemplateDialogOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -255,14 +256,15 @@ export default function App() {
     setAiResult(null);
   };
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = (templateKey = 'software') => {
+    const template = PROJECT_TEMPLATES[templateKey] || PROJECT_TEMPLATES.software;
     const newRoom: Note = {
       id: `room-${Date.now()}`,
       type: 'room',
-      title: 'New Project Room',
-      subtitle: 'Software modules, sprints & milestones',
-      content: JSON.stringify(DEFAULT_ROOM_DATA),
-      kanbanData: DEFAULT_ROOM_DATA,
+      title: template.name,
+      subtitle: template.subtitle,
+      content: JSON.stringify({ projectName: template.name, columns: template.columns, tasks: template.tasks }),
+      kanbanData: { projectName: template.name, columns: template.columns, tasks: template.tasks },
       createdAt: Date.now(),
       updatedAt: Date.now(),
       wordCount: 0,
@@ -271,6 +273,10 @@ export default function App() {
     setNotes([newRoom, ...notes]);
     setSelectedNoteId(newRoom.id);
     setAiResult(null);
+  };
+
+  const handleOpenRoomTemplateDialog = () => {
+    setIsRoomTemplateDialogOpen(true);
   };
 
   const handleDeleteNote = (id: string) => {
@@ -292,6 +298,13 @@ export default function App() {
     };
     setNotes([duplicated, ...notes]);
     setSelectedNoteId(duplicated.id);
+  };
+
+  const handleTogglePin = (id: string) => {
+    notifyChange();
+    setNotes((prevNotes) => prevNotes.map((note) => (
+      note.id === id ? { ...note, pinned: !note.pinned, updatedAt: Date.now() } : note
+    )));
   };
 
   // Keyboard shortcuts (⌘N for new note)
@@ -414,9 +427,13 @@ export default function App() {
 
   // AI action execution
   const handleSelectAIAction = async (action: AIAction, customPrompt?: string) => {
-    const textToProcess = currentNote.content.trim() || currentNote.title;
+    const textToProcess = action === 'new_conversation'
+      ? customPrompt?.trim() || ''
+      : currentNote.content.trim() || currentNote.title;
     if (!textToProcess) {
-      alert('Please speak or type some text first before organizing.');
+      alert(action === 'new_conversation'
+        ? 'Please enter a topic for the new conversation.'
+        : 'Please speak or type some text first before organizing.');
       return;
     }
 
@@ -532,15 +549,16 @@ export default function App() {
           }}
           onCreateNote={handleCreateNote}
           onCreateKanban={handleCreateKanban}
-          onCreateRoom={handleCreateRoom}
+          onCreateRoom={handleOpenRoomTemplateDialog}
           onDeleteNote={handleDeleteNote}
           onDuplicateNote={handleDuplicateNote}
+          onTogglePin={handleTogglePin}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         {currentNote.type === 'room' ? (
-          <RoomPlanner
+          <Rooms
             note={currentNote}
             onUpdateNote={handleUpdateCurrentNote}
             onDeleteNote={notes.length > 1 ? handleDeleteNote : undefined}
@@ -557,6 +575,7 @@ export default function App() {
           <Editor
             note={currentNote}
             isSidebarCollapsed={isSidebarCollapsed}
+            onDeleteNote={notes.length > 1 ? handleDeleteNote : undefined}
             onUpdateNote={handleUpdateCurrentNote}
             isRecording={isRecording}
             onToggleRecord={handleToggleRecord}
@@ -579,6 +598,17 @@ export default function App() {
         settings={settings}
         onSaveSettings={(newSettings) => setSettings(newSettings)}
       />
+
+      {isRoomTemplateDialogOpen && (
+        <TemplateDialog
+          templates={PROJECT_TEMPLATES}
+          onApply={(templateKey) => {
+            handleCreateRoom(templateKey);
+            setIsRoomTemplateDialogOpen(false);
+          }}
+          onClose={() => setIsRoomTemplateDialogOpen(false)}
+        />
+      )}
 
       {/* Floating Autosaved Status Toggle */}
       <div 

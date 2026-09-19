@@ -346,6 +346,9 @@ Return only the finished article.
     case "custom":
       actionInstruction = customPrompt || `Improve and refine this writing.`;
       break;
+    case "new_conversation":
+      actionInstruction = `Write a fresh, engaging long-form piece from scratch about this topic. Do not assume there is an existing draft. Develop a compelling opening, clear ideas, useful detail, and a satisfying conclusion. Use compact Markdown and preserve a thoughtful human voice.`;
+      break;
   }
 
   const fullPrompt = `${actionInstruction}\n\nOriginal Text:\n${text}`;
@@ -562,6 +565,11 @@ case "custom":
 default:
 return normalizeEditorFormatting(
 `${clean} *(Refined with focus on: ${customPrompt || "Substack editorial clarity" })*`
+);
+case "new_conversation":
+return normalizeEditorFormatting(
+`## ${clean}
+Begin with a compelling opening that frames why this topic matters. Develop the central ideas with concrete detail and a clear human point of view. End with a conclusion that gives the reader something useful to carry forward.`
 );
 }
 }

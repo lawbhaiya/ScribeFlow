@@ -117,6 +117,7 @@ function instructionFor(action: string, customPrompt?: string): string {
   if (action === "summarize") return "Summarize the text with a concise subtitle, key takeaways, and a short overview.";
   if (action === "structure") return "Structure the text with compact Markdown headings, paragraphs, and useful bullet points.";
   if (action === "grammar") return "Correct grammar and syntax while preserving the author's voice.";
+  if (action === "new_conversation") return "Write a fresh, engaging long-form piece from scratch about this topic. Develop a compelling opening, clear ideas, useful detail, and a satisfying conclusion.";
   return "Organize and polish the text while preserving the author's voice and meaning.";
 }
 
@@ -131,6 +132,9 @@ function localTransform(text: string, action: string, customPrompt?: string): st
   }
   if (action === "rewrite") {
     return customPrompt ? `${clean}\n\n${customPrompt}` : clean;
+  }
+  if (action === "new_conversation") {
+    return `## ${clean}\nBegin with a compelling opening that frames why this topic matters. Develop the central ideas with concrete detail and a clear human point of view. End with a conclusion that gives the reader something useful to carry forward.`;
   }
   return clean;
 }
