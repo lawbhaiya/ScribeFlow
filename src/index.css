@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Newsreader', 'Lora', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Theme definition utility classes */
+.theme-mocha {
+  --bg-main: #1e1e2e;
+  --bg-sidebar: #1e1e2e;
+  --bg-card: #232338;
+  --bg-card-hover: #2b2b42;
+  --bg-active: #313244;
+  --border-color: #313244;
+  --border-highlight: #45475a;
+  --text-primary: #cdd6f4;
+  --text-secondary: #a6adc8;
+  --text-muted: #6c7086;
+  --accent-color: #cba6f7;
+  --accent-soft: rgba(203, 166, 247, 0.15);
+  --mic-color: #f38ba8;
+  --mic-soft: rgba(243, 139, 168, 0.15);
+  --success-color: #a6e3a1;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.theme-light {
+  --bg-main: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-active: #e2e8f0;
+  --border-color: #e2e8f0;
+  --border-highlight: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-color: #ff6719;
+  --accent-soft: rgba(255, 103, 25, 0.1);
+  --mic-color: #ef4444;
+  --mic-soft: rgba(239, 68, 68, 0.1);
+  --success-color: #10b981;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.theme-warm {
+  --bg-main: #fbf0d9;
+  --bg-sidebar: #fbf0d9;
+  --bg-card: #fff8eb;
+  --bg-card-hover: #faeed7;
+  --bg-active: #ebd8b5;
+  --border-color: #e2d1b1;
+  --border-highlight: #d1bfa0;
+  --text-primary: #2c2520;
+  --text-secondary: #615549;
+  --text-muted: #8c7d6e;
+  --accent-color: #c25e2e;
+  --accent-soft: rgba(194, 94, 46, 0.12);
+  --mic-color: #dc2626;
+  --mic-soft: rgba(220, 38, 38, 0.12);
+  --success-color: #15803d;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.theme-dark {
+  --bg-main: #0f1117;
+  --bg-sidebar: #0f1117;
+  --bg-card: #1d212c;
+  --bg-card-hover: #242a38;
+  --bg-active: #2b3243;
+  --border-color: #252a37;
+  --border-highlight: #373e51;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-color: #818cf8;
+  --accent-soft: rgba(129, 140, 248, 0.15);
+  --mic-color: #f43f5e;
+  --mic-soft: rgba(244, 63, 94, 0.15);
+  --success-color: #34d399;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-highlight);
+}
+
+/* Editorial Substack styling */
+.font-editorial {
+  font-family: var(--font-serif);
+}
+
+.font-editorial-sans {
+  font-family: var(--font-sans);
+}
+
+.font-code {
+  font-family: var(--font-mono);
+}
+
+/* Ensure placeholder text is crisp and legible across all themes */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.82;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "ScribeFlow",
+  "description": "Substack-inspired voice-first editor featuring native Win+H dictation, ElevenLabs Scribe BYOK, OpenRouter AI, task Kanban workflow planner, and project room management.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
